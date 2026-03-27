@@ -76,8 +76,13 @@ async def set_strength(channel: str, value: int) -> str:
         return "Error: Not connected to any device."
     if value < 0 or value > 200:
         return "Error: Strength must be 0~200."
-    device.set_strength(channel.upper(), value)
-    return f"Channel {channel.upper()} strength set to {value}."
+    ch = channel.upper()
+    device.set_strength(ch, value)
+    msg = f"Channel {ch} strength set to {value}."
+    wave_active = device.state.wave_a if ch == "A" else device.state.wave_b
+    if not wave_active:
+        msg += " Note: no active waveform on this channel — consider sending a wave for output."
+    return msg
 
 
 @mcp.tool()
@@ -90,9 +95,14 @@ async def add_strength(channel: str, delta: int) -> str:
     """
     if not device.state.connected:
         return "Error: Not connected to any device."
-    device.add_strength(channel.upper(), delta)
+    ch = channel.upper()
+    device.add_strength(ch, delta)
     direction = "increased" if delta > 0 else "decreased"
-    return f"Channel {channel.upper()} strength {direction} by {abs(delta)}."
+    msg = f"Channel {ch} strength {direction} by {abs(delta)}."
+    wave_active = device.state.wave_a if ch == "A" else device.state.wave_b
+    if not wave_active:
+        msg += " Note: no active waveform on this channel — consider sending a wave for output."
+    return msg
 
 
 @mcp.tool()

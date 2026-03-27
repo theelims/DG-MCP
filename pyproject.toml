@@ -1,10 +1,10 @@
 [project]
 name = "dg-mcp"
-version = "0.1.0"
+version = "0.1.1"
 description = "MCP Server for DG-Lab Coyote 3.0 via BLE"
 readme = "README.md"
 license = { file = "LICENSE" }
-authors = [{ name = "0xNull.Ai", email = "271426072+0xNullAI@users.noreply.github.com" }]
+authors = [{ name = "0xNull.AI", email = "271426072+0xNullAI@users.noreply.github.com" }]
 requires-python = ">=3.10"
 keywords = ["mcp", "dg-lab", "ble", "bluetooth", "coyote"]
 classifiers = [

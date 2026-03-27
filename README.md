@@ -6,7 +6,7 @@
 
 - 🦷 **BLE 直连** — 无需 APP，电脑蓝牙直接连接郊狼 3.0
 - 🤖 **MCP 协议** — Claude Desktop / Claude Code 等 AI 客户端即插即用
-- 🎛️ **9 个 Tools** — 扫描、连接、强度控制、波形播放、状态查询
+- 🎛️ **10 个 Tools** — 扫描、连接、强度控制、波形播放、自定义波形设计、状态查询
 - 🌊 **6 种预设波形** — 呼吸、潮汐、低/中/高脉冲、敲击
 - 🔒 **安全保护** — 强度软上限，防止 AI 误操作
 
@@ -65,7 +65,8 @@ AI 会按以下流程操作：
 🔍 scan()          → 扫描附近的郊狼设备
 🔗 connect(地址)    → 连接设备
 ⚡ set_strength()   → 设置通道强度
-🌊 send_wave()      → 发送波形
+🌊 send_wave()      → 发送预设/自定义波形
+🎨 design_wave()    → 设计多步变化波形
 ```
 
 ## 🎛️ MCP Tools 一览
@@ -77,9 +78,10 @@ AI 会按以下流程操作：
 | ❌ `disconnect` | 断开连接 | `disconnect()` |
 | ⚡ `set_strength` | 设置通道强度 (0~200) | `set_strength("A", 10)` |
 | ➕ `add_strength` | 增减强度 | `add_strength("A", 5)` |
-| 🔒 `set_strength_limit` | 设置强度软上限 | `set_strength_limit(50, 50)` |
-| 🌊 `send_wave` | 发送波形 | `send_wave("A", preset="breath")` |
-| ⏹️ `stop_wave` | 停止波形 | `stop_wave("A")` |
+| 🔒 `set_strength_limit` | 设置强度软上限（断电保存） | `set_strength_limit(50, 50)` |
+| 🌊 `send_wave` | 发送预设/自定义波形 | `send_wave("A", preset="breath")` |
+| 🎨 `design_wave` | 设计多步变化波形 | `design_wave("A", steps=[...])` |
+| ⏹️ `stop_wave` | 停止波形（省略通道停止全部） | `stop_wave("A")` / `stop_wave()` |
 | 📊 `get_status` | 查询设备状态 | `get_status()` |
 
 ## 🌊 预设波形
@@ -95,14 +97,38 @@ AI 会按以下流程操作：
 
 ### 🎨 自定义波形
 
-除了预设，还可以自定义频率和强度：
+除了预设，还可以用 `send_wave` 自定义固定频率和强度：
 
 ```
-send_wave("A", frequency=100, intensity=50)
+send_wave("A", frequency=100, intensity=50, duration_frames=10, loop=True)
 ```
 
 - `frequency`: 波形频率 10~1000ms（值越小频率越高）
 - `intensity`: 波形强度 0~100
+- `duration_frames`: 持续帧数，每帧 100ms（默认 10 = 1 秒）
+- `loop`: 是否循环播放（默认 `True`）
+
+### 🎼 设计多步波形
+
+使用 `design_wave` 可以创建频率和强度随时间变化的复杂波形，每个 step 持续 100ms：
+
+```
+design_wave("A", steps=[
+    {"freq": 10, "intensity": 0},
+    {"freq": 10, "intensity": 25},
+    {"freq": 10, "intensity": 50},
+    {"freq": 10, "intensity": 75},
+    {"freq": 10, "intensity": 100, "repeat": 3},
+    {"freq": 10, "intensity": 0,   "repeat": 2}
+], loop=True)
+```
+
+- `freq`: 脉冲频率 10~1000ms（值越小频率越高）
+- `intensity`: 强度 0~100（0=无输出，100=最强）
+- `repeat`: 该步骤重复次数（默认 1）
+- `loop`: 是否循环播放（默认 `True`，设为 `False` 播放一次后停止）
+
+> 💡 AB 双通道可同时独立播放不同波形
 
 ## ⚠️ 安全须知
 
@@ -123,7 +149,7 @@ DG-MCP/
 │   ├── 📡 protocol.py         # V3 BLE 协议 (B0/BF 指令)
 │   ├── 🌊 waves.py            # 预设波形 + 自定义波形
 │   ├── 🦷 device.py           # BLE 设备管理 (扫描/连接/控制)
-│   └── 🤖 server.py           # MCP Server (9 个 Tools)
+│   └── 🤖 server.py           # MCP Server (10 个 Tools)
 ```
 
 ## 🔧 技术细节
