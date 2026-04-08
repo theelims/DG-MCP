@@ -174,6 +174,10 @@ DG-MCP/
 - [DG-LAB-OPENSOURCE](https://github.com/DG-LAB-OPENSOURCE/DG-LAB-OPENSOURCE) — 官方开源 BLE 协议
 - [Model Context Protocol](https://modelcontextprotocol.io/) — MCP 协议规范
 
+## 🚨 免责声明
+
+> **本项目仅供学习交流使用，不得用于任何违法或不当用途。使用者应自行承担使用本项目所产生的一切风险和责任，项目作者不对因使用本项目而导致的任何直接或间接损害承担责任。**
+
 ## 📄 License
 
 MIT
