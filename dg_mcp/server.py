@@ -6,17 +6,16 @@ import logging
 from mcp.server.fastmcp import FastMCP
 
 from .device import CoyoteDevice
-from .protocol import encode_frequency
 from .waves import PRESETS, custom_wave_to_frames, preset_to_frames, steps_to_frames
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 mcp = FastMCP(
-    "DG-Lab Coyote 3.0",
+    "DG-Lab Coyote",
     instructions=(
-        "Control a DG-Lab Coyote 3.0 pulse device via Bluetooth. "
-        "Typical workflow: scan → connect → set_strength → send_wave. "
+        "Control a DG-Lab Coyote pulse device (V2 or V3) via Bluetooth. "
+        "Typical workflow: scan → connect (pass the version from scan results) → set_strength → send_wave. "
         "Strength range is 0~200. Always start low (e.g. 5~10) and increase gradually. "
         "Available wave presets: breath, tide, pulse_low, pulse_mid, pulse_high, tap."
     ),
@@ -27,13 +26,13 @@ device = CoyoteDevice()
 
 @mcp.tool()
 async def scan(timeout: float = 5.0) -> str:
-    """Scan for nearby DG-Lab Coyote 3.0 devices.
+    """Scan for nearby DG-Lab Coyote devices (V2 and V3).
 
     Args:
         timeout: Scan duration in seconds (default 5)
 
     Returns:
-        JSON list of found devices with name and address.
+        JSON list of found devices with name, address, and version.
     """
     results = await device.scan(timeout=timeout)
     if not results:
@@ -42,15 +41,16 @@ async def scan(timeout: float = 5.0) -> str:
 
 
 @mcp.tool()
-async def connect(address: str) -> str:
-    """Connect to a Coyote 3.0 device by Bluetooth address.
+async def connect(address: str, version: str = "v3") -> str:
+    """Connect to a Coyote device by Bluetooth address.
 
     Args:
         address: BLE address from scan results (e.g. "AA:BB:CC:DD:EE:FF")
+        version: Device version from scan results — "v2" or "v3" (default "v3")
     """
     try:
-        await device.connect(address)
-        return f"Connected to {address}. Battery: {device.state.battery}%"
+        await device.connect(address, version=version)
+        return f"Connected to {address} (V{version[-1]}). Battery: {device.state.battery}%"
     except Exception as e:
         return f"Connection failed: {e}"
 
@@ -107,7 +107,10 @@ async def add_strength(channel: str, delta: int) -> str:
 
 @mcp.tool()
 async def set_strength_limit(limit_a: int, limit_b: int) -> str:
-    """Set strength soft limits for safety. Persisted on device even after power off.
+    """Set strength soft limits for safety.
+
+    V3: persisted on device even after power off.
+    V2: software-enforced cap (not stored on device).
 
     Args:
         limit_a: Max strength for A channel (0~200)
@@ -149,9 +152,8 @@ async def send_wave(
         except ValueError as e:
             return str(e)
     elif frequency is not None and intensity is not None:
-        encoded_freq = encode_frequency(frequency)
         frames = custom_wave_to_frames(
-            freq=encoded_freq,
+            freq=frequency,
             intensity=min(max(intensity, 0), 100),
             count=duration_frames,
         )

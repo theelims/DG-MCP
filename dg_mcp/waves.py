@@ -104,7 +104,7 @@ def custom_wave_to_frames(
     """Create a simple custom waveform with uniform freq/intensity.
 
     Args:
-        freq: Wave frequency (encoded, 10~240)
+        freq: Wave period in ms (10~1000). V3 encoding happens at write time.
         intensity: Wave intensity (0~100)
         count: Number of 100ms frames
     """
@@ -120,7 +120,7 @@ def steps_to_frames(steps: list[dict]) -> list[WaveFrame]:
     """Convert a list of step dicts to WaveFrames.
 
     Each step is a dict with:
-        - freq: wave frequency (10~1000ms, will be auto-encoded to 10~240)
+        - freq: wave period in ms (10~1000). V3 encoding happens at write time.
         - intensity: wave intensity (0~100)
         - repeat: optional, repeat this step N times (default 1)
 
@@ -131,11 +131,9 @@ def steps_to_frames(steps: list[dict]) -> list[WaveFrame]:
             {"freq": 20, "intensity": 100},
         ]
     """
-    from .protocol import encode_frequency
-
     frames = []
     for step in steps:
-        f = encode_frequency(step["freq"])
+        f = max(10, min(1000, step["freq"]))
         i = max(0, min(100, step.get("intensity", 0)))
         repeat = max(1, step.get("repeat", 1))
         frame = WaveFrame(freq=(f, f, f, f), intensity=(i, i, i, i))
