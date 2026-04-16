@@ -131,3 +131,89 @@ def parse_b1(data: bytes) -> dict:
 # Inactive wave data: intensity > 100 causes channel to be ignored
 WAVE_INACTIVE = (0, 0, 0, 101)
 WAVE_FREQ_ZERO = (0, 0, 0, 0)
+
+
+# ---------------------------------------------------------------------------
+# V2 Protocol (DG-Lab Coyote V2 / "D-LAB ESTIM01")
+# ---------------------------------------------------------------------------
+
+V2_DEVICE_NAME = "D-LAB ESTIM01"
+
+# BLE UUIDs (base: 955Axxxx-0FE2-F5AA-A094-84B8D4F3E8AD)
+V2_BATTERY_SERVICE_UUID = "955A180A-0FE2-F5AA-A094-84B8D4F3E8AD"
+V2_BATTERY_UUID         = "955A1500-0FE2-F5AA-A094-84B8D4F3E8AD"
+V2_PWM_SERVICE_UUID     = "955A180B-0FE2-F5AA-A094-84B8D4F3E8AD"
+V2_PWM_AB2_UUID         = "955A1504-0FE2-F5AA-A094-84B8D4F3E8AD"  # strength (R/W/Notify)
+V2_PWM_A34_UUID         = "955A1505-0FE2-F5AA-A094-84B8D4F3E8AD"  # channel B waveform (R/W)
+V2_PWM_B34_UUID         = "955A1506-0FE2-F5AA-A094-84B8D4F3E8AD"  # channel A waveform (R/W)
+
+# V2 internal strength range (wire units)
+V2_STRENGTH_MAX = 2047
+
+
+def build_v2_pwm_ab2(strength_a: int, strength_b: int) -> bytes:
+    """Build a 3-byte PWM_AB2 strength packet.
+
+    Args:
+        strength_a: Channel A internal strength (0-2047)
+        strength_b: Channel B internal strength (0-2047)
+
+    Returns:
+        3-byte little-endian bit-packed strength packet.
+        Bit layout: bits 23-22 reserved, bits 21-11 = A, bits 10-0 = B.
+    """
+    a = max(0, min(2047, strength_a))
+    b = max(0, min(2047, strength_b))
+    packed = ((a & 0x7FF) << 11) | (b & 0x7FF)
+    return bytes([packed & 0xFF, (packed >> 8) & 0xFF, (packed >> 16) & 0xFF])
+
+
+def build_v2_pwm_wave(period_ms: int, intensity_pct: int) -> bytes:
+    """Build a 3-byte PWM_A34/B34 waveform packet.
+
+    Args:
+        period_ms: Waveform period in ms (10-1000).
+        intensity_pct: Intensity 0-100.
+
+    Returns:
+        3-byte packet encoding X (pulse count), Y (gap interval), Z (pulse width).
+
+    Byte layout (verified against official example hex):
+        byte[0] bits 4-0 = X (0-31)
+        byte[0] bits 7-5 + byte[1] bits 6-0 = Y (0-1023)
+        byte[2] = Z (0-31)
+    """
+    period_ms = max(10, min(1000, period_ms))
+    x = round((period_ms / 1000) ** 0.5 * 15)
+    x = max(0, min(31, x))
+    y = max(0, min(1023, period_ms - x))
+    z = max(0, min(31, round(intensity_pct * 31 / 100)))
+    byte0 = (x & 0x1F) | ((y & 0x07) << 5)
+    byte1 = (y >> 3) & 0x7F
+    byte2 = z & 0x1F
+    return bytes([byte0, byte1, byte2])
+
+
+def parse_v2_pwm_ab2(data: bytes) -> dict:
+    """Parse a 3-byte PWM_AB2 notification into internal strength values.
+
+    Returns:
+        Dict with 'strength_a' and 'strength_b' (0-2047), or empty dict on error.
+    """
+    if len(data) < 3:
+        return {}
+    packed = data[0] | (data[1] << 8) | (data[2] << 16)
+    return {
+        "strength_b": packed & 0x7FF,
+        "strength_a": (packed >> 11) & 0x7FF,
+    }
+
+
+def v2_strength_to_user(internal: int) -> int:
+    """Convert V2 internal strength (0-2047) to user-facing value (0-200)."""
+    return round(internal * 200 / 2047)
+
+
+def v2_strength_from_user(user: int) -> int:
+    """Convert user-facing strength (0-200) to V2 internal value (0-2047)."""
+    return round(max(0, min(200, user)) * 2047 / 200)
