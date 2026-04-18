@@ -1,12 +1,12 @@
 [project]
 name = "kink-mcp"
-version = "0.2.0"
-description = "MCP Server for DG-Lab Coyote 3.0 via BLE"
+version = "0.0.1"
+description = "MCP Server for DG-Lab Coyote and Lovense Toys"
 readme = "README.md"
 license = { file = "LICENSE" }
-authors = [{ name = "0xNull.AI", email = "271426072+0xNullAI@users.noreply.github.com" }]
+authors = [{ name = "theelims", email = "elims@gmx.net" }]
 requires-python = ">=3.10"
-keywords = ["mcp", "dg-lab", "ble", "bluetooth", "coyote"]
+keywords = ["mcp", "dg-lab", "ble", "bluetooth", "coyote", "lovense"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -24,9 +24,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/0xNullAI/kink-mcp"
-Repository = "https://github.com/0xNullAI/kink-mcp"
-Issues = "https://github.com/0xNullAI/kink-mcp/issues"
+Homepage = "https://github.com/theelims/kink-mcp"
+Repository = "https://github.com/theelims/kink-mcp"
+Issues = "https://github.com/theelims/kink-mcp/issues"
 
 [project.scripts]
 kink-mcp = "kink_mcp.server:main"
