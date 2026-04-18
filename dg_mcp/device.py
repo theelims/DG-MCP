@@ -194,7 +194,7 @@ class CoyoteDevice:
             raise ValueError(f"Invalid channel: {channel}")
 
     async def set_strength_limit(self, limit_a: int, limit_b: int) -> None:
-        """Set strength soft limits.
+        """Set pain endurance limits.
 
         V3: persisted on device via BF command.
         V2: software-enforced cap applied in the write loop.
@@ -636,8 +636,11 @@ class DeviceManager:
             self._session_start = now
         self._alias_last_activity[alias] = now
 
-    def set_strength(self, alias: str, pct: int) -> None:
-        """Set absolute strength for all Coyote channels with this alias (0–100%)."""
+    def set_strength(self, alias: str, pct: int) -> int:
+        """Set absolute strength for all Coyote channels with this alias (0–100%).
+
+        Returns the effective percentage after applying the pain endurance limit.
+        """
         entries = self._resolve(alias)
         coyote_pairs = [(dev, ch) for dev, ch in entries if isinstance(dev, CoyoteDevice)]
         if not coyote_pairs:
@@ -645,9 +648,17 @@ class DeviceManager:
         raw = _pct_to_raw(pct)
         for dev, ch in coyote_pairs:
             dev.set_strength(ch, raw)
+        effective_raw = min(
+            dev.state.limit_a if ch == "A" else dev.state.limit_b
+            for dev, ch in coyote_pairs
+        )
+        return _raw_to_pct(min(raw, effective_raw))
 
-    def adjust_strength(self, alias: str, delta_pct: int) -> None:
-        """Increase or decrease strength for all Coyote channels with this alias (delta in %)."""
+    def adjust_strength(self, alias: str, delta_pct: int) -> tuple[int, int]:
+        """Increase or decrease strength for all Coyote channels with this alias (delta in %).
+
+        Returns (intended_pct, effective_pct) where effective may be lower due to pain endurance limit.
+        """
         entries = self._resolve(alias)
         coyote_pairs = [(dev, ch) for dev, ch in entries if isinstance(dev, CoyoteDevice)]
         if not coyote_pairs:
@@ -655,9 +666,19 @@ class DeviceManager:
         raw_delta = delta_pct * 2
         for dev, ch in coyote_pairs:
             dev.add_strength(ch, raw_delta)
+        dev, ch = coyote_pairs[0]
+        if ch == "A":
+            target_raw = dev.state.strength_a + dev.state._pending_strength_a
+            limit_raw = dev.state.limit_a
+        else:
+            target_raw = dev.state.strength_b + dev.state._pending_strength_b
+            limit_raw = dev.state.limit_b
+        intended_raw = max(STRENGTH_MIN, min(STRENGTH_MAX, target_raw))
+        effective_raw = max(STRENGTH_MIN, min(limit_raw, target_raw))
+        return _raw_to_pct(intended_raw), _raw_to_pct(effective_raw)
 
     async def set_strength_limit(self, alias: str, limit_pct: int) -> None:
-        """Set strength soft limit for all Coyote channels with this alias (0–100%)."""
+        """Set pain endurance limit for all Coyote channels with this alias (0–100%)."""
         entries = self._resolve(alias)
         coyote_pairs = [(dev, ch) for dev, ch in entries if isinstance(dev, CoyoteDevice)]
         if not coyote_pairs:
