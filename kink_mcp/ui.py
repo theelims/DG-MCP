@@ -150,7 +150,7 @@ function renderMatrix(){
     const cb=d.alias_b?`<div class="mcell"><div class="malias">${esc(d.alias_b)}</div><input type="range" min="0" max="100" value="${lb}" ${dis} oninput="this.nextElementSibling.textContent=this.value+'%'" onchange="setPL('${esc(d.alias_b)}',+this.value)"><div class="mval">${lb}%</div></div>`:'<div class="mcell" style="opacity:.3"><div class="malias">&mdash;</div></div>';
     const dot=d.connected?(d.battery>=0&&d.battery<30?'&#9679;':'&#9679;'):'&#10007;';
     const dotcol=d.connected?(d.battery>=0&&d.battery<30?'#f59e0b':'#34d399'):'#ef4444';
-    return `<div class="mrow${d.connected?'':' off'}"><div class="mlbl"><span style="color:${dotcol}">${dot}</span> ${esc(d.device_type)} ${esc(d.version)} &middot; ${esc(d.address.slice(-8))}</div>${ca}${cb}</div>`;
+    return `<div class="mrow${d.connected?'':' off'}"><div class="mlbl"><span style="color:${dotcol}">${dot}</span> ${esc(d.device_type)} ${esc(d.version)} &middot; ${esc(d.address)}</div>${ca}${cb}</div>`;
   }).join('');
 }
 function renderToggle(){
@@ -159,7 +159,7 @@ function renderToggle(){
 }
 async function doScan(){
   const btn=document.getElementById('scanbtn');
-  btn.disabled=true;btn.textContent='&#9203; Scanning...';
+  btn.disabled=true;btn.innerHTML='&#9203; Scanning...';
   document.getElementById('scanst').textContent='';
   document.getElementById('scanres').innerHTML='';
   cancelCon();
@@ -173,7 +173,7 @@ async function doScan(){
       document.getElementById('scanres').innerHTML=d.map(x=>`<div class="sr"><span>${esc(x.name)} <span style="color:#475569;font-size:11px">${esc(x.address)}</span></span><button class="btn btn-primary" onclick="showCF('${esc(x.address)}','${esc(x.name)}','${esc(x.type||x.version)}')">Connect</button></div>`).join('');
     }
   }catch(e){document.getElementById('scanst').textContent='Scan failed.';}
-  finally{btn.disabled=false;btn.textContent='&#128269; Scan for Devices';}
+  finally{btn.disabled=false;btn.innerHTML='&#128269; Scan for Devices';}
 }
 function showCF(addr,name,dtype){
   cdev={addr,name,dtype};
