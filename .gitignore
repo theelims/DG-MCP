@@ -8,3 +8,4 @@ build/
 .claude/
 DG-LAB-OPENSOURCE/
 .superpowers
+.worktrees/
