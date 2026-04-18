@@ -107,15 +107,16 @@ class LovenseDevice:
         self.state.address = self._client.address
         self.state.name = name or self._client.address
 
-        # Request battery level (response arrives asynchronously via _on_notify)
+        # Request battery level; response arrives asynchronously via _on_notify.
+        # Poll for up to 2 s so the connect() response can report actual battery %.
         try:
             await self._send_raw("Battery;")
+            for _ in range(20):
+                await asyncio.sleep(0.1)
+                if self.state.battery >= 0:
+                    break
         except Exception:
             logger.debug("Could not request battery level")
-
-        # Yield to the event loop so any pending WinRT callbacks (e.g. services_changed)
-        # are processed here rather than blocking the MCP response delivery later.
-        await asyncio.sleep(0)
 
         logger.info("Lovense connected to %s (%s)", self.state.name, address)
 

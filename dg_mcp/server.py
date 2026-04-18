@@ -27,16 +27,19 @@ mcp = FastMCP(
         "GENERAL: Strength range 0–100%. Always start low (5–10%) and increase gradually. "
         "Available Coyote wave presets: breath, tide, pulse_low, pulse_mid, pulse_high, tap. "
         "loop=0 means infinite loop; loop=N plays the wave N times then stops. "
-        "Read the devices://status resource for a live snapshot of all connected devices before issuing commands."
+        "Call live_status() for a live snapshot of all connected devices before issuing commands."
     ),
 )
 
 manager = DeviceManager()
 
 
-@mcp.resource("devices://status")
+@mcp.tool()
 def live_status() -> str:
-    """Live session snapshot: alias routing, current state, and activity timers."""
+    """Live session snapshot: alias routing, current state, and activity timers.
+
+    Call this before issuing any commands to see what devices and aliases are connected.
+    """
     s = manager.get_all_status()
     session = s.get("session", {})
     lines = [
