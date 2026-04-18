@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from dataclasses import dataclass
 
-from bleak import BleakClient, BleakScanner
+from bleak import BleakClient
 
 logger = logging.getLogger(__name__)
 
@@ -50,11 +51,7 @@ class LovenseDevice:
 
         Tries Gen 2 UART first; falls back to Gen 1 UUIDs if the service is absent.
         """
-        ble_device = await BleakScanner.find_device_by_address(address, timeout=10.0)
-        if ble_device is None:
-            raise ValueError(f"Lovense device {address} not found.")
-
-        self._client = BleakClient(ble_device)
+        self._client = BleakClient(address)
         await self._client.connect()
 
         if not self._client.is_connected:
@@ -71,14 +68,22 @@ class LovenseDevice:
             notify_uuid = GEN1_NOTIFY_UUID
             logger.debug("Lovense Gen 1 detected")
 
-        await self._client.start_notify(notify_uuid, self._on_notify)
+        try:
+            await asyncio.wait_for(
+                self._client.start_notify(notify_uuid, self._on_notify), timeout=5.0
+            )
+        except Exception as e:
+            logger.warning("start_notify failed (%s); continuing without notifications", e)
 
         self.state.connected = True
         self.state.address = address
-        self.state.name = name or (ble_device.name or address)
+        self.state.name = name or address
 
-        # Request battery level
-        await self._send_raw("Battery;")
+        # Request battery level (response arrives asynchronously via _on_notify)
+        try:
+            await self._send_raw("Battery;")
+        except Exception:
+            logger.debug("Could not request battery level")
         logger.info("Connected to Lovense %s (%s)", self.state.name, address)
 
     async def disconnect(self) -> None:
