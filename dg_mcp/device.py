@@ -570,7 +570,7 @@ class DeviceManager:
 
         if is_lovense_name(name):
             dev = LovenseDevice()
-            await dev.connect(address, name=name)
+            await dev.connect(ble_device, name=name)
             self._devices.append(dev)
             self._alias_map.setdefault(alias_a, []).append((dev, "V"))
             logger.info("Registered Lovense alias '%s' for %s", alias_a, address)

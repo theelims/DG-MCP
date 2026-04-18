@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 mcp = FastMCP(
     "DG-Lab Coyote & Lovense",
     instructions=(
-        "Control DG-Lab Coyote pulse devices and Lovense vibration toys via Bluetooth. "
+        "Control DG-Lab Coyote electro-stimulation devices and Lovense vibrator toys via Bluetooth. "
         "\n\n"
         "COYOTE (e-stim): each device has two channels (A and B), each gets its own alias. "
         "Use set_strength, adjust_strength, set_strength_limit, play_wave, design_wave, stop_wave. "

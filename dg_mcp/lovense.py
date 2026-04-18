@@ -6,7 +6,7 @@ import asyncio
 import logging
 from dataclasses import dataclass
 
-from bleak import BleakClient
+from bleak import BleakClient, BLEDevice
 
 logger = logging.getLogger(__name__)
 
@@ -46,12 +46,22 @@ class LovenseDevice:
         self._client: BleakClient | None = None
         self._write_uuid: str = UART_WRITE_UUID
 
-    async def connect(self, address: str, name: str = "") -> None:
+    def _on_disconnect(self, _client: BleakClient) -> None:
+        if self.state.connected:
+            logger.warning("Lovense %s disconnected unexpectedly", self.state.name)
+        self.state.connected = False
+
+    async def connect(self, address: BLEDevice | str, name: str = "") -> None:
         """Connect to a Lovense device.
 
         Tries Gen 2 UART first; falls back to Gen 1 UUIDs if the service is absent.
+        Pass a BLEDevice object (preferred on Windows) or a string address.
         """
-        self._client = BleakClient(address)
+        self._client = BleakClient(
+            address,
+            disconnected_callback=self._on_disconnect,
+            timeout=15.0,
+        )
         await self._client.connect()
 
         if not self._client.is_connected:
@@ -62,29 +72,32 @@ class LovenseDevice:
         if UART_SERVICE.lower() in services:
             self._write_uuid = UART_WRITE_UUID
             notify_uuid = UART_NOTIFY_UUID
-            logger.debug("Lovense Gen 2 (UART) detected")
+            logger.debug("Lovense: Gen 2 (UART) detected")
         else:
             self._write_uuid = GEN1_WRITE_UUID
             notify_uuid = GEN1_NOTIFY_UUID
-            logger.debug("Lovense Gen 1 detected")
+            logger.debug("Lovense: Gen 1 detected")
 
         try:
-            await asyncio.wait_for(
-                self._client.start_notify(notify_uuid, self._on_notify), timeout=5.0
-            )
+            await self._client.start_notify(notify_uuid, self._on_notify)
         except Exception as e:
             logger.warning("start_notify failed (%s); continuing without notifications", e)
 
         self.state.connected = True
-        self.state.address = address
-        self.state.name = name or address
+        self.state.address = self._client.address
+        self.state.name = name or self._client.address
 
         # Request battery level (response arrives asynchronously via _on_notify)
         try:
             await self._send_raw("Battery;")
         except Exception:
             logger.debug("Could not request battery level")
-        logger.info("Connected to Lovense %s (%s)", self.state.name, address)
+
+        # Yield to the event loop so any pending WinRT callbacks (e.g. services_changed)
+        # are processed here rather than blocking the MCP response delivery later.
+        await asyncio.sleep(0)
+
+        logger.info("Lovense connected to %s (%s)", self.state.name, address)
 
     async def disconnect(self) -> None:
         """Disconnect from the device."""
