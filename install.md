@@ -8,7 +8,7 @@ Add to claude_desktop_config.json:
         "--directory",
         "C:\\Users\\elims\\Documents\\Projekte\\DG-MCP",
         "run",
-        "dg-mcp"
+        "kink-mcp"
       ]
     }
   },

@@ -1,6 +1,6 @@
 """Waveform library for DG-Lab Coyote 3.0 (V3 format).
 
-Wave definitions are stored in a JSON file at ~/.local/share/dg-mcp/waves.json.
+Wave definitions are stored in a JSON file at ~/.local/share/kink-mcp/waves.json.
 On first run the file is created with the built-in presets.
 """
 
@@ -8,7 +8,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-WAVES_FILE = Path.home() / ".local" / "share" / "dg-mcp" / "waves.json"
+WAVES_FILE = Path.home() / ".local" / "share" / "kink-mcp" / "waves.json"
 
 _DEFAULTS: dict = {
     "breath": {

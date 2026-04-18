@@ -1,6 +1,6 @@
 [project]
-name = "dg-mcp"
-version = "0.1.1"
+name = "kink-mcp"
+version = "0.2.0"
 description = "MCP Server for DG-Lab Coyote 3.0 via BLE"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -24,12 +24,12 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/0xNullAI/DG-MCP"
-Repository = "https://github.com/0xNullAI/DG-MCP"
-Issues = "https://github.com/0xNullAI/DG-MCP/issues"
+Homepage = "https://github.com/0xNullAI/kink-mcp"
+Repository = "https://github.com/0xNullAI/kink-mcp"
+Issues = "https://github.com/0xNullAI/kink-mcp/issues"
 
 [project.scripts]
-dg-mcp = "dg_mcp.server:main"
+kink-mcp = "kink_mcp.server:main"
 
 [build-system]
 requires = ["hatchling"]

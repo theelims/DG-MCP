@@ -1,4 +1,4 @@
-# 🐺 DG-MCP — Let AI Control the Coyote & Lovense
+# 🐺 kink-mcp — Let AI Control the Coyote & Lovense
 
 > 🔌 A DG-Lab Coyote and Lovense device controller based on MCP (Model Context Protocol), enabling AI like Claude to control the devices directly via Bluetooth.
 
@@ -42,9 +42,9 @@ Edit `claude_desktop_config.json`. The file location varies by operating system:
 ```json
 {
   "mcpServers": {
-    "dg-lab": {
+    "kink-mcp": {
       "command": "uvx",
-      "args": ["dg-mcp"]
+      "args": ["kink-mcp"]
     }
   }
 }
@@ -53,10 +53,10 @@ Edit `claude_desktop_config.json`. The file location varies by operating system:
 #### 💻 Claude Code
 
 ```bash
-claude mcp add dg-lab -- uvx dg-mcp
+claude mcp add kink-mcp -- uvx kink-mcp
 ```
 
-> 🗑️ Remove: `claude mcp remove dg-lab`
+> 🗑️ Remove: `claude mcp remove kink-mcp`
 
 ### 2️⃣ Power On and Connect
 
@@ -150,7 +150,7 @@ Domi, Hush 2, Lush 3, Ferri, Nora, Max 2, and other Lovense Gen 1/2 toys.
 
 ## 🌊 Wave Library
 
-Wave definitions are stored in `~/.local/share/dg-mcp/waves.json` and loaded at runtime.
+Wave definitions are stored in `~/.local/share/kink-mcp/waves.json` and loaded at runtime.
 Read `waves://library` for all available names and descriptions. Use `design_wave` to add your own.
 
 Six built-in presets:
@@ -227,9 +227,9 @@ Every `play_wave` or `vibrate` call records activity timestamps. These appear in
 ## 🏗️ Project Structure
 
 ```
-DG-MCP/
+kink-mcp/
 ├── 📄 pyproject.toml          # Project config + dependencies
-├── 📦 dg_mcp/
+├── 📦 kink_mcp/
 │   ├── 📡 protocol.py         # BLE protocol constants and packet builders (V2 & V3)
 │   ├── 🌊 waves.py            # Preset waveforms + custom waveforms
 │   ├── 🦷 device.py           # BLE device management (CoyoteDevice + DeviceManager)
