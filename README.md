@@ -10,12 +10,34 @@
 - 📳 **Lovense Support** — Control Lovense vibration toys (Domi, Hush, Lush, Ferri, …) alongside Coyote devices
 - 🔌 **Multi-Device** — Connect multiple devices at once; each channel gets a descriptive alias
 - 🏷️ **Alias System** — Channels are identified by labels you choose (e.g. `"left_thigh"`, `"toy"`); shared aliases sync multiple channels automatically
-- 🎛️ **11 Tools** — Scan, connect, strength control, waveform playback, custom waveform design, vibration, status query
+- 🖥️ **Web UI** — Local control panel for device management; scan, connect, rename aliases, set pain limits
 - 🌊 **Wave Library** — 6 built-in presets; design and save unlimited custom waves via `design_wave`
-- 📚 **3 Resources** — Live device status, wave library listing, wave design guide
-- 🔒 **Pain Endurance Limit** — Configurable ceiling to prevent AI from exceeding user-defined intensity
+- 📚 **4 Resources** — Web UI URL, live device status, wave library listing, wave design guide
+- 🔒 **Pain Limit** — Per-channel soft cap; configurable via web UI slider; optionally expose to AI
+- 💾 **Persistent Config** — Device addresses, aliases, and pain limits survive restarts; auto-reconnect on startup
 
 - ⏱️ **Session Timer** — Track session start time and per-alias last-activity timestamps
+
+## 🖥️ Web UI
+
+When kink-mcp starts, it launches a local control panel and prints the URL to the console:
+
+```
+kink-mcp UI: http://localhost:<port>
+```
+
+Open the URL in your browser. The UI provides:
+
+- **Scan & Connect** — discover nearby devices and assign channel aliases
+- **Connected Devices** — live list with battery, connection state, and per-device Disconnect
+- **Alias Rename** — click any alias badge to rename it on the fly
+- **Pain Limit matrix** — set per-channel soft strength caps with sliders
+- **LLM toggle** — expose `set_pain_limit` to the AI (off by default); restart required
+
+The AI can also read the `ui://url` resource to retrieve the link and share it with you.
+
+**State that persists across restarts:** device addresses, aliases, pain limits, and the LLM toggle.
+On restart, kink-mcp attempts to auto-reconnect all known devices. Devices that cannot be found are shown as offline with a Retry button.
 
 ## 📦 Installation
 
@@ -58,18 +80,20 @@ claude mcp add kink-mcp -- uvx kink-mcp
 
 > 🗑️ Remove: `claude mcp remove kink-mcp`
 
-### 2️⃣ Power On and Connect
+### 2️⃣ Open the Web UI and Connect
 
 1. 🔋 Long-press the device power button to turn it on
-2. 📡 Ensure your computer's Bluetooth is enabled (**no manual pairing needed**, BLE connects directly)
-3. 🤖 In your AI conversation, say: "Scan and connect to my devices"
+2. 🌐 Open the URL printed in the console: `kink-mcp UI: http://localhost:<port>`
+3. 🔍 Click **Scan for Devices** in the UI
+4. 🔗 Click **Connect** next to your device and enter channel aliases
+5. 🤖 In your AI conversation, the AI can now control the connected devices
+
+Alternatively, ask the AI: "What is the UI URL?" — it will read the `ui://url` resource and share the link.
 
 ### 3️⃣ AI Handles the Rest
 
 **Coyote flow:**
 ```
-🔍 scan()                                              → Scan for nearby devices
-🔗 connect(address, alias_a, alias_b)                  → Connect and name the channels
 ⚡ set_strength(alias, value)                          → Set channel strength (0–100%)
 🌊 play_wave(alias, name)                              → Play any wave from the library
 🎨 design_wave(steps, name, description)               → Save a custom wave to the library
@@ -78,8 +102,6 @@ claude mcp add kink-mcp -- uvx kink-mcp
 
 **Lovense flow:**
 ```
-🔍 scan()                                      → Scan for nearby devices
-🔗 connect(address, alias_a)                   → Connect (no alias_b needed)
 📳 vibrate(alias, strength)                    → Set vibration intensity (0–100%)
 ```
 
@@ -122,19 +144,19 @@ set_strength("outer", 25)  # sets both devices' 'outer' channels simultaneously
 
 | Tool | Description | Example |
 |------|-------------|---------|
-| 🔍 `scan` | Scan for nearby Coyote and Lovense devices | `scan(timeout=5)` |
-| 🔗 `connect` | Connect and assign channel alias(es) | `connect("AA:BB:...", "left_thigh", "right_thigh")` |
-| ❌ `disconnect` | Disconnect all devices | `disconnect()` |
 | ⚡ `set_strength` | Set Coyote channel strength 0–100% | `set_strength("left_thigh", 10)` |
 | ➕ `adjust_strength` | Increase or decrease Coyote strength | `adjust_strength("left_thigh", 5)` |
-| 🔒 `set_strength_limit` | Set pain endurance limit 0–100% (Coyote) | `set_strength_limit("left_thigh", 50)` |
 | 📳 `vibrate` | Set Lovense vibration intensity 0–100% | `vibrate("toy", 40)` |
-| 🌊 `play_wave` | Play a wave from the library (Coyote) | `play_wave("left_thigh", preset="breath")` |
-| 🎨 `design_wave` | Save a custom wave to the library | `design_wave(steps=[...], name="ramp", description="...")` |
+| 🌊 `play_wave` | Play a preset waveform (Coyote) | `play_wave("left_thigh", preset="breath")` |
+| 🎨 `design_wave` | Design a multi-step waveform (Coyote) | `design_wave("left_thigh", steps=[...])` |
 | ⏹️ `stop_wave` | Stop waveform (omit alias to stop all) | `stop_wave("left_thigh")` / `stop_wave()` |
 | 📊 `get_status` | Query all device and channel status (JSON) | `get_status()` |
+| 🔒 `set_pain_limit` | Set soft strength limit (hidden by default — enable in web UI) | `set_pain_limit("left_thigh", 50)` |
+
+**Device management** (scan, connect, disconnect, alias rename) is handled exclusively via the **web UI**.
 
 **Resources:**
+- `ui://url` — URL of the local web control panel
 - `devices://status` — live human-readable snapshot of all connected devices; read before issuing commands
 - `waves://library` — all available wave names and descriptions; read before calling `play_wave`
 - `waves://guide` — wave parameter reference and sensation guide; read before calling `design_wave`
@@ -230,11 +252,13 @@ Every `play_wave` or `vibrate` call records activity timestamps. These appear in
 kink-mcp/
 ├── 📄 pyproject.toml          # Project config + dependencies
 ├── 📦 kink_mcp/
+│   ├── ⚙️  config.py           # Persistent JSON config (platform path, load/save)
 │   ├── 📡 protocol.py         # BLE protocol constants and packet builders (V2 & V3)
 │   ├── 🌊 waves.py            # Preset waveforms + custom waveforms
 │   ├── 🦷 device.py           # BLE device management (CoyoteDevice + DeviceManager)
 │   ├── 📳 lovense.py          # Lovense BLE device class
-│   └── 🤖 server.py           # MCP Server (11 Tools + 3 resources)
+│   ├── 🖥️  ui.py               # aiohttp web UI server + single-page HTML/CSS/JS
+│   └── 🤖 server.py           # MCP Server (tools + resources) and asyncio entry point
 ```
 
 ## 🔧 Technical Details
