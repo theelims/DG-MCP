@@ -9,7 +9,7 @@ from mcp.server.fastmcp import FastMCP
 
 from .config import load_config, save_config
 from .device import CoyoteDevice, DeviceManager
-from .waves import get_frames, load_waves, steps_to_frames
+from .waves import get_frames, load_waves, save_wave, steps_to_frames
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -39,6 +39,8 @@ mcp = FastMCP(
         "loop=0 means infinite loop; loop=N plays the wave N times then stops. "
         "Read the devices://status resource for a live snapshot of all connected devices. "
         "Read waves://library for all available wave names and descriptions. "
+        "To create a custom wave: design_wave(steps, name, description) saves it to the library, "
+        "then play_wave(alias, name) plays it. "
         "Read waves://guide for a full explanation of wave parameters and how they feel."
     ),
 )
@@ -237,15 +239,17 @@ async def vibrate(alias: str, strength: int) -> str:
 @mcp.tool()
 async def play_wave(
     alias: str,
-    preset: str,
+    name: str,
     loop: int = 0,
     strength: int | None = None,
 ) -> str:
-    """Play a preset waveform on a Coyote channel or group of synced channels.
+    """Play a waveform from the library on a Coyote channel or group of synced channels.
+
+    Use design_wave() to create custom waveforms. See waves://library for available waves.
 
     Args:
         alias: Channel alias assigned at connect time
-        preset: Preset name — breath, tide, pulse_low, pulse_mid, pulse_high, tap
+        name: Wave name from the library — built-in presets or custom designs
         loop: 0 = loop infinitely (default); N = play exactly N times then stop
         strength: Optional strength percentage (0–100) to set before playing.
     """
@@ -257,59 +261,57 @@ async def play_wave(
         except ValueError as e:
             return f"Error: {e}"
     try:
-        frames = get_frames(preset)
+        frames = get_frames(name)
     except (KeyError, ValueError) as e:
-        return f"Error: Unknown preset '{preset}'. {e}"
+        return f"Error: Unknown wave '{name}'. {e}"
     try:
         manager.send_wave(alias, frames, loop=loop)
     except ValueError as e:
         return f"Error: {e}"
     loop_desc = "looping" if loop == 0 else f"{loop}x"
     strength_desc = f", strength={strength}%" if strength is not None else ""
-    return f"Preset '{preset}' playing on '{alias}' ({loop_desc}{strength_desc})."
+    return f"Wave '{name}' playing on '{alias}' ({loop_desc}{strength_desc})."
 
 
 @mcp.tool()
 async def design_wave(
-    alias: str,
     steps: list[dict],
-    loop: int = 0,
-    strength: int | None = None,
+    name: str,
+    description: str,
 ) -> str:
-    """Design and play a custom waveform by defining a sequence of steps on a Coyote channel.
+    """Design a custom waveform and save it to the wave library for later playback.
+
+    After saving, use play_wave(alias, name) to play it on a device channel.
+    See waves://guide for a full explanation of parameters and sensation patterns.
 
     Args:
-        alias: Channel alias assigned at connect time
         steps: List of step objects, each with:
-            - freq: wave frequency in ms (10–1000, lower = higher frequency pulse)
+            - freq: wave period in ms (10–1000, lower = higher frequency / sharper feel)
             - intensity: wave intensity (0–100, 0=silent, 100=strongest)
             - repeat: optional, repeat this step N times (default 1)
-        loop: 0 = loop infinitely (default); N = play exactly N times then stop
-        strength: Optional strength percentage (0–100) to set before playing.
+        name: Unique name for this wave (used with play_wave)
+        description: Short description of what this wave does or feels like
+
+    Example steps for a gradual ramp up then sudden drop:
+        [
+            {"freq": 10, "intensity": 0},
+            {"freq": 10, "intensity": 25},
+            {"freq": 10, "intensity": 50},
+            {"freq": 10, "intensity": 75},
+            {"freq": 10, "intensity": 100, "repeat": 3},
+            {"freq": 10, "intensity": 0, "repeat": 2}
+        ]
     """
-    if strength is not None:
-        if strength < 0 or strength > 100:
-            return "Error: Strength must be 0–100."
-        try:
-            manager.set_strength(alias, strength)
-        except ValueError as e:
-            return f"Error: {e}"
     if not steps:
         return "Error: steps list cannot be empty."
+    if not name:
+        return "Error: name cannot be empty."
     try:
-        frames = steps_to_frames(steps)
+        steps_to_frames(steps)  # validate before saving
     except (KeyError, TypeError) as e:
         return f"Error: Invalid step format: {e}. Each step needs 'freq' and 'intensity'."
-    try:
-        manager.send_wave(alias, frames, loop=loop)
-    except ValueError as e:
-        return f"Error: {e}"
-    loop_desc = "looping" if loop == 0 else f"{loop}x"
-    strength_desc = f", strength={strength}%" if strength is not None else ""
-    return (
-        f"Custom wave ({len(frames)} frames, {len(frames) * 100}ms) "
-        f"playing on '{alias}' ({loop_desc}{strength_desc})."
-    )
+    save_wave(name, steps, description)
+    return f"Wave '{name}' saved to library. Use play_wave(alias, '{name}') to play it."
 
 
 @mcp.tool()

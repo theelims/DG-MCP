@@ -15,7 +15,6 @@
 - 📚 **4 Resources** — Web UI URL, live device status, wave library listing, wave design guide
 - 🔒 **Pain Limit** — Per-channel soft cap; configurable via web UI slider; optionally expose to AI
 - 💾 **Persistent Config** — Device addresses, aliases, and pain limits survive restarts; auto-reconnect on startup
-
 - ⏱️ **Session Timer** — Track session start time and per-alias last-activity timestamps
 
 ## 🖥️ Web UI
@@ -56,11 +55,11 @@ On restart, kink-mcp attempts to auto-reconnect all known devices. Devices that 
 
 Edit `claude_desktop_config.json`. The file location varies by operating system:
 
-| OS | Path |
-|----------|------|
-| 🍎 macOS | `~/Library/Application Support/Claude/claude_desktop_config.json` |
-| 🪟 Windows | `%APPDATA%\Claude\claude_desktop_config.json` |
-| 🐧 Linux | `~/.config/Claude/claude_desktop_config.json` |
+| OS         | Path                                                              |
+| ---------- | ----------------------------------------------------------------- |
+| 🍎 macOS   | `~/Library/Application Support/Claude/claude_desktop_config.json` |
+| 🪟 Windows | `%APPDATA%\Claude\claude_desktop_config.json`                     |
+| 🐧 Linux   | `~/.config/Claude/claude_desktop_config.json`                     |
 
 ```json
 {
@@ -94,6 +93,7 @@ Alternatively, ask the AI: "What is the UI URL?" — it will read the `ui://url`
 ### 3️⃣ AI Handles the Rest
 
 **Coyote flow:**
+
 ```
 ⚡ set_strength(alias, value)                          → Set channel strength (0–100%)
 🌊 play_wave(alias, name)                              → Play any wave from the library
@@ -102,6 +102,7 @@ Alternatively, ask the AI: "What is the UI URL?" — it will read the `ui://url`
 ```
 
 **Lovense flow:**
+
 ```
 📳 vibrate(alias, strength)                    → Set vibration intensity (0–100%)
 ```
@@ -143,20 +144,21 @@ set_strength("outer", 25)  # sets both devices' 'outer' channels simultaneously
 
 ## 🎛️ MCP Tools Overview
 
-| Tool | Description | Example |
-|------|-------------|---------|
-| ⚡ `set_strength` | Set Coyote channel strength 0–100% | `set_strength("left_thigh", 10)` |
-| ➕ `adjust_strength` | Increase or decrease Coyote strength | `adjust_strength("left_thigh", 5)` |
-| 📳 `vibrate` | Set Lovense vibration intensity 0–100% | `vibrate("toy", 40)` |
-| 🌊 `play_wave` | Play a preset waveform (Coyote) | `play_wave("left_thigh", preset="breath")` |
-| 🎨 `design_wave` | Design a multi-step waveform (Coyote) | `design_wave("left_thigh", steps=[...])` |
-| ⏹️ `stop_wave` | Stop waveform (omit alias to stop all) | `stop_wave("left_thigh")` / `stop_wave()` |
-| 📊 `get_status` | Query all device and channel status (JSON) | `get_status()` |
-| 🔒 `set_pain_limit` | Set soft strength limit (hidden by default — enable in web UI) | `set_pain_limit("left_thigh", 50)` |
+| Tool                 | Description                                                    | Example                                    |
+| -------------------- | -------------------------------------------------------------- | ------------------------------------------ |
+| ⚡ `set_strength`    | Set Coyote channel strength 0–100%                             | `set_strength("left_thigh", 10)`           |
+| ➕ `adjust_strength` | Increase or decrease Coyote strength                           | `adjust_strength("left_thigh", 5)`         |
+| 📳 `vibrate`         | Set Lovense vibration intensity 0–100%                         | `vibrate("toy", 40)`                       |
+| 🌊 `play_wave`       | Play a preset waveform (Coyote)                                | `play_wave("left_thigh", preset="breath")` |
+| 🎨 `design_wave`     | Design a multi-step waveform (Coyote)                          | `design_wave("left_thigh", steps=[...])`   |
+| ⏹️ `stop_wave`       | Stop waveform (omit alias to stop all)                         | `stop_wave("left_thigh")` / `stop_wave()`  |
+| 📊 `get_status`      | Query all device and channel status (JSON)                     | `get_status()`                             |
+| 🔒 `set_pain_limit`  | Set soft strength limit (hidden by default — enable in web UI) | `set_pain_limit("left_thigh", 50)`         |
 
 **Device management** (scan, connect, disconnect, alias rename) is handled exclusively via the **web UI**.
 
 **Resources:**
+
 - `ui://url` — URL of the local web control panel
 - `devices://status` — live human-readable snapshot of all connected devices; read before issuing commands
 - `waves://library` — all available wave names and descriptions; read before calling `play_wave`
@@ -178,14 +180,14 @@ Read `waves://library` for all available names and descriptions. Use `design_wav
 
 Six built-in presets:
 
-| Name | Feel |
-|------|------|
-| 🫁 `breath` | Slow rise and fall, like breathing |
-| 🌊 `tide` | Gradual build and ebb twice, with rising frequency |
-| 💤 `pulse_low` | Steady gentle pulse |
-| ⚡ `pulse_mid` | Steady moderate pulse |
-| 🔥 `pulse_high` | Steady intense pulse |
-| 👆 `tap` | Sharp double-tap with pauses |
+| Name            | Feel                                               |
+| --------------- | -------------------------------------------------- |
+| 🫁 `breath`     | Slow rise and fall, like breathing                 |
+| 🌊 `tide`       | Gradual build and ebb twice, with rising frequency |
+| 💤 `pulse_low`  | Steady gentle pulse                                |
+| ⚡ `pulse_mid`  | Steady moderate pulse                              |
+| 🔥 `pulse_high` | Steady intense pulse                               |
+| 👆 `tap`        | Sharp double-tap with pauses                       |
 
 ### play_wave — Play Any Library Wave
 
@@ -273,15 +275,16 @@ kink-mcp/
 
 ## 🖥️ Platform Support
 
-| Platform | Status | Notes |
-|----------|--------|-------|
-| 🪟 Windows | ✅ Supported | Works out of the box |
-| 🍎 macOS | ✅ Supported | Works out of the box |
-| 🐧 Linux | ✅ Supported | Requires BlueZ |
-| 🐧 WSL2 | ⚠️ Needs setup | Requires USB Bluetooth passthrough ([usbipd](https://github.com/dorssel/usbipd-win)) |
+| Platform   | Status         | Notes                                                                                |
+| ---------- | -------------- | ------------------------------------------------------------------------------------ |
+| 🪟 Windows | ✅ Supported   | Works out of the box                                                                 |
+| 🍎 macOS   | ✅ Supported   | Works out of the box                                                                 |
+| 🐧 Linux   | ✅ Supported   | Requires BlueZ                                                                       |
+| 🐧 WSL2    | ⚠️ Needs setup | Requires USB Bluetooth passthrough ([usbipd](https://github.com/dorssel/usbipd-win)) |
 
 ## 📜 Acknowledgements
 
+- [DG-MCP](https://github.com/0xNullAI/DG-MCP) — 0xNullAI, who sparked this MCP
 - [DG-LAB-OPENSOURCE](https://github.com/DG-LAB-OPENSOURCE/DG-LAB-OPENSOURCE) — Official open-source BLE protocol
 - [Model Context Protocol](https://modelcontextprotocol.io/) — MCP protocol specification
 
